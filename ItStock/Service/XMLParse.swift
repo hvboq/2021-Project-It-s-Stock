@@ -5,18 +5,14 @@
 //  Created by 강민석 on 2021/03/30.
 //
 
-import SwiftUI
 import XMLMapper
-import RealmSwift
 
 class XMLParse: NSObject, ObservableObject {
+    var stockUrl = "http://asp1.krx.co.kr/servlet/krx.asp.XMLSise?code="
+    @Published var itemStore: StockXMLModel?
     
-    public var dbModel = DBModel()
-    
-    @Published var itemStore: StockPrice?
-    
-    func loadData(_ urlString: String) {
-        guard let url = URL(string: urlString) else { return }
+    func loadData(_ stockCode: String) {
+        guard let url = URL(string: stockUrl + stockCode) else { return }
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             if error == nil {
@@ -26,15 +22,26 @@ class XMLParse: NSObject, ObservableObject {
                 let fIndex = content!.firstIndex(of: "\n") // xml declaration 바로 다음 \n의 인덱스 값을 가져오기
                 let xmlTxt = String(content![fIndex!...]) // xml declaration 이후를 저장
                 
-                print(xmlTxt)
-                
                 DispatchQueue.main.async {
-                    self.itemStore = StockPrice(XMLString: xmlTxt)
+                    self.itemStore = StockXMLModel(XMLString: xmlTxt)
                     
-                    self.dbModel.name = self.itemStore!.TBL_StockInfo!.JongName!
-                    self.dbModel.price = Int(self.itemStore!.TBL_StockInfo!.CurJuka!.components(separatedBy:",").joined()) ?? 0
+                    let name = self.itemStore?.TBL_StockInfo?.JongName
+                    let curPrice = Int(self.itemStore?.TBL_StockInfo?.CurJuka?.components(separatedBy: ",").joined() ?? "")
                     
-                    print(self.dbModel.price)
+//                    let newStock = StockModel(code: stockCode,
+//                                              name: name ?? "",
+//                                              curPrice: curPrice ?? 0,
+//                                              purchasePrice: 0,
+//                                              variationRate: 0)
+                    
+                    let newStock = StockModel(code: stockCode)
+                    newStock.name = name ?? ""
+                    newStock.curPrice = curPrice ?? 0
+                    
+                    DatabaseManager.shared.add(newStock)
+                    
+                    print(newStock.curPrice)
+                    print(newStock.name)
                 }
                 
             } else {

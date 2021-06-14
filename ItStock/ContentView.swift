@@ -6,37 +6,75 @@
 //
 
 import SwiftUI
+import RealmSwift
 
 struct StockRow: View {
-    var name: String
-    var price: Int
+    var stock : StockModel
     var body: some View {
-        Text(name + " " + String(price))
+        Text(stock.name + " " + String(stock.curPrice))
     }
 }
 
 struct ContentView: View {
+    @State var isInserting = false
+    @State var isSetting = false
     
-    @ObservedObject var parserControl = XMLParse()
-    var stockUrl = "http://asp1.krx.co.kr/servlet/krx.asp.XMLSise?code=035420"
+    @State var stockCode: String = ""
+    
+    @ObservedObject var stockFetcher = StockController()
     
     var body: some View {
-        if let itemResult = parserControl.itemStore {
-            List {
-                StockRow(name: parserControl.dbModel.name , price: parserControl.dbModel.price)
-                StockRow(name: parserControl.dbModel.name , price: parserControl.dbModel.price)
-                StockRow(name: parserControl.dbModel.name , price: parserControl.dbModel.price)
+        VStack{
+            HStack{
+                Button(action: { self.isInserting.toggle() }) {
+                    Text("설정")
+                }.popover(isPresented: self.$isInserting, arrowEdge: .bottom) {
+                    InsertStockPopoverView()
+                }
+                Button(action: { self.stockFetcher.getStockByCode(stockCode) }) {
+                    Text("+")
+                }
             }
-        } else {
-            VStack {
-                Text("none")
+            
+            List(stockFetcher.stocks) { response in
+                HStack {
+                    Text(response.code)
+                    Text(response.name)
+                    Spacer()
+                    Text("\(response.curPrice) 원")
+                }
+                
+                
+            }.frame(width: 500, height: 300)
+            
+            HStack {
+                TextField("Input Stock Code", text: $stockCode)
+                    .padding()
+                
                 Button {
-                    self.parserControl.loadData(stockUrl)
+                    self.stockFetcher.getAllStock()
                 } label: {
                     Text("Refresh")
-                }
-            }.frame(width: 500, height: 500)
-        }
+                }.padding()
+            }
+        }.frame(width:500, height: 400)
+    }
+}
+
+struct InsertStockPopoverView: View {
+    var body: some View {
+        VStack {
+            Text("Some text here ").padding()
+            Button("Resume") {
+            }
+        }.padding()
+    }
+}
+struct SettingPopoverView: View {
+    var body: some View {
+        VStack{
+            
+        }.padding()
     }
 }
 

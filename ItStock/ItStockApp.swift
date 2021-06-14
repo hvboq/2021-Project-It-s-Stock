@@ -6,9 +6,18 @@
 //
 
 import SwiftUI
+import AppKit
+import RealmSwift
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        print(Realm.Configuration.defaultConfiguration.fileURL!)
+    }
+}
 
 @main
-struct ItStockApp: App {
+struct ItStockApp: SwiftUI.App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
         WindowGroup {
             ContentView()
